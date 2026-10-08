@@ -1038,6 +1038,25 @@
 
         // Auto-load sample log on page load
         loadSampleLog();
+
+        // Support URL query parameters & hashes for direct page/theme routing
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageParam = urlParams.get("page") || window.location.hash.replace("#", "");
+        if (pageParam && ["dashboard", "analytics", "threats", "logs", "rules"].includes(pageParam)) {
+            setTimeout(() => navigate(pageParam), 150);
+        }
+        if (urlParams.get("theme") === "light") {
+            document.documentElement.setAttribute("data-theme", "light");
+        }
+        if (urlParams.get("modal") === "true") {
+            setTimeout(() => { if (typeof openThreatDetail === "function") openThreatDetail(0); }, 400);
+        }
+        if (urlParams.get("filter_ip")) {
+            setTimeout(() => {
+                const f = document.getElementById("filter-ip");
+                if (f) { f.value = urlParams.get("filter_ip"); renderLogStream(); }
+            }, 400);
+        }
     });
     </script>
 
