@@ -15,9 +15,11 @@ REPEATED_FAIL_THRESHOLD = 5  # Repeated Failed Login: 5+ total failed logins per
 SUSPICIOUS_KEYWORDS = ["UNAUTHORIZED", "ACCESS_DENIED", "MALICIOUS", "ATTACK"]
 
 # ── Top-level Flask Application (Vercel WSGI entrypoint) ───────────────────────
-app = Flask(__name__, static_folder=".", static_url_path="")
-
-
+app = Flask(
+    __name__,
+    static_folder=".",
+    static_url_path=""
+)
 # ── Core Log Analysis & Detection Engine ──────────────────────────────────────
 def parse_logs(text: str) -> pd.DataFrame:
     """Parse CSV-style log lines into a normalized pandas DataFrame."""
