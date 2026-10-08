@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogGuard – SOC Security Log Analysis Dashboard</title>
+    <meta name="description" content="LogGuard SOC Dashboard — Real-time security log analysis, threat detection, and IP monitoring.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- ── Left Sidebar Navigation ────────────────────────────────────── -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-badge">🛡️</div>
+                <div class="brand-text">LogGuard</div>
+                <span class="brand-badge">SOC PRO</span>
+            </div>
+
+            <div class="sidebar-scroll">
+                <div class="nav-section-title">Navigation</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-nav="dashboard" id="nav-dashboard">
+                            <span class="nav-link-content">
+                                <span class="nav-icon">📊</span>
+                                <span>Dashboard</span>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-nav="analytics" id="nav-analytics">
+                            <span class="nav-link-content">
+                                <span class="nav-icon">📈</span>
+                                <span>Visual Analytics</span>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-nav="threats" id="nav-threats">
+                            <span class="nav-link-content">
+                                <span class="nav-icon">🚨</span>
+                                <span>Threat Alerts</span>
+                            </span>
+                            <span class="nav-badge" id="sidebar-threat-count">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-nav="logs" id="nav-logs">
+                            <span class="nav-link-content">
+                                <span class="nav-icon">📜</span>
+                                <span>Log Stream</span>
+                            </span>
+                            <span class="nav-badge" id="sidebar-log-count">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-nav="rules" id="nav-rules">
+                            <span class="nav-link-content">
+                                <span class="nav-icon">📏</span>
+                                <span>Detection Rules</span>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="nav-section-title">Log Source</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a class="nav-link" id="btn-load-sample">
+                            <span class="nav-link-content">
+                                <span class="nav-icon">📄</span>
+                                <span>Load Sample Log</span>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="btn-upload-trigger">
+                            <span class="nav-link-content">
+                                <span class="nav-icon">📂</span>
+                                <span>Upload Log File</span>
+                            </span>
+                        </a>
+                        <input type="file" id="file-upload" accept=".log,.txt" style="display:none">
+                    </li>
+                </ul>
+            </div>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">SO</div>
+                <div class="user-info">
+                    <div class="user-name">Security Analyst</div>
+                    <div class="user-role">Active SOC Mode</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ── Main Dashboard Area ────────────────────────────────────────── -->
+        <main class="main-wrapper">
+            <!-- ── Top Header Bar ─────────────────────────────────────────── -->
+            <header class="topbar">
+                <div class="page-title-group">
+                    <h1 id="page-title">Security Dashboard</h1>
+                    <p id="page-subtitle">Analyze, correlate, and protect against active threats</p>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="global-search" class="search-input" placeholder="Search logs, IPs, threats, usernames...">
+                    </div>
+
+                    <div class="status-pill">
+                        <span class="status-dot-pulse"></span>
+                        <span>Engine Active</span>
+                    </div>
+
+                    <button class="icon-btn" id="theme-toggle" title="Toggle Light / Dark mode">
+                        🌓
+                    </button>
+                </div>
+            </header>
+
+            <!-- ── Content Body ───────────────────────────────────────────── -->
+            <div class="content-body">
+
+                <!-- ═══ PAGE: DASHBOARD ═══════════════════════════════════ -->
+                <div id="page-dashboard" class="page-section active-page">
+                    <!-- Info Banner -->
+                    <section class="info-banner">
+                        <div class="info-banner-left">
+                            <div class="info-banner-icon">🛡️</div>
+                            <div>
+                                <div class="info-banner-title">Local Threat Detection Engine Active</div>
+                                <div class="info-banner-desc">Real-time heuristic log analysis with brute force correlation and keyword detection.</div>
+                            </div>
+                        </div>
+                        <span class="badge-outline" id="banner-badge">No Data Loaded</span>
+                    </section>
+
+                    <!-- 4 KPI Metric Cards -->
+                    <section class="metrics-grid">
+                        <div class="metric-kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-wrap kpi-icon-blue">📋</div>
+                                <span class="kpi-badge badge-soft-blue">Total Ingested</span>
+                            </div>
+                            <div class="kpi-value" id="val-total-logs">0</div>
+                            <div class="kpi-title">Total Log Entries</div>
+                            <div class="kpi-desc">Processed authentication & audit logs</div>
+                        </div>
+                        <div class="metric-kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-wrap kpi-icon-red">❌</div>
+                                <span class="kpi-badge badge-soft-red">Auth Failures</span>
+                            </div>
+                            <div class="kpi-value" id="val-failed-logins">0</div>
+                            <div class="kpi-title">Failed Logins</div>
+                            <div class="kpi-desc">Authentication attempts that were rejected</div>
+                        </div>
+                        <div class="metric-kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-wrap kpi-icon-amber">🔍</div>
+                                <span class="kpi-badge badge-soft-amber">Action Needed</span>
+                            </div>
+                            <div class="kpi-value" id="val-suspicious-ips">0</div>
+                            <div class="kpi-title">Suspicious IPs</div>
+                            <div class="kpi-desc">Sources exhibiting abnormal patterns</div>
+                        </div>
+                        <div class="metric-kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-wrap kpi-icon-green">✅</div>
+                                <span class="kpi-badge badge-soft-green">Verified Clean</span>
+                            </div>
+                            <div class="kpi-value" id="val-clean-entries">0</div>
+                            <div class="kpi-title">Clean / Normal Entries</div>
+                            <div class="kpi-desc">Legitimate events with no threat indicators</div>
+                        </div>
+                    </section>
+
+                    <!-- Recent Threats Preview -->
+                    <section class="feed-section" id="dashboard-threats-section" style="display:none;">
+                        <div class="feed-header">
+                            <div class="feed-title-wrap">
+                                <h2 class="feed-title">Recent Threats</h2>
+                                <span class="items-count-badge" id="dashboard-threat-count">0 threats</span>
+                            </div>
+                        </div>
+                        <div id="dashboard-threats-list"></div>
+                    </section>
+                </div>
+
+                <!-- ═══ PAGE: VISUAL ANALYTICS ════════════════════════════ -->
+                <div id="page-analytics" class="page-section">
+                    <section class="feed-section">
+                        <div class="feed-header">
+                            <div class="feed-title-wrap">
+                                <h2 class="feed-title">📈 Visual Analytics</h2>
+                                <span class="items-count-badge">Charts & Trends</span>
+                            </div>
+                        </div>
+                        <div id="chart-timeline" class="chart-container"></div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;">
+                            <div id="chart-login-status" class="chart-container"></div>
+                            <div id="chart-threat-severity" class="chart-container"></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;">
+                            <div id="chart-top-ips" class="chart-container"></div>
+                            <div id="chart-failed-ips" class="chart-container"></div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ═══ PAGE: THREAT ALERTS ════════════════════════════════ -->
+                <div id="page-threats" class="page-section">
+                    <section class="feed-section">
+                        <div class="feed-header">
+                            <div class="feed-title-wrap">
+                                <h2 class="feed-title">🚨 Threat Alerts</h2>
+                                <span class="items-count-badge" id="threats-total-badge">0 detected</span>
+                            </div>
+                            <div class="feed-controls">
+                                <select class="filter-select" id="threat-severity-filter">
+                                    <option value="all">All Severities</option>
+                                    <option value="HIGH">High</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="LOW">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="threats-list"></div>
+                        <div class="table-responsive" style="margin-top:18px;">
+                            <table class="incident-table" id="threats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Severity</th>
+                                        <th>Source IP</th>
+                                        <th>Threat Type</th>
+                                        <th>Attempts</th>
+                                        <th>Window</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="threats-tbody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ═══ PAGE: LOG STREAM ═══════════════════════════════════ -->
+                <div id="page-logs" class="page-section">
+                    <section class="feed-section">
+                        <div class="feed-header">
+                            <div class="feed-title-wrap">
+                                <h2 class="feed-title">📜 Log Stream</h2>
+                                <span class="items-count-badge" id="log-stream-count">0 records</span>
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:18px;">
+                            <input type="text" id="filter-ip" class="search-input" placeholder="Filter by IP...">
+                            <input type="text" id="filter-username" class="search-input" placeholder="Filter by Username...">
+                            <select class="filter-select" id="filter-status" style="width:100%;">
+                                <option value="all">All Status</option>
+                                <option value="success">Success</option>
+                                <option value="failed">Failed</option>
+                                <option value="suspicious">Suspicious</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <input type="text" id="filter-search" class="search-input" placeholder="Search keyword...">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="incident-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>IP Address</th>
+                                        <th>Username</th>
+                                        <th>Event</th>
+                                        <th>Status</th>
+                                        <th>Threat Classification</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="log-tbody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ═══ PAGE: DETECTION RULES ═════════════════════════════ -->
+                <div id="page-rules" class="page-section">
+                    <section class="feed-section">
+                        <div class="feed-header">
+                            <div class="feed-title-wrap">
+                                <h2 class="feed-title">📏 Detection Rules</h2>
+                                <span class="items-count-badge">4 active rules</span>
+                            </div>
+                        </div>
+                        <div class="info-banner" style="margin-bottom:18px;">
+                            <div class="info-banner-left">
+                                <div class="info-banner-icon">⚙️</div>
+                                <div>
+                                    <div class="info-banner-title" style="color:var(--success);">● All 4 detection rules active</div>
+                                    <div class="info-banner-desc">These rules are applied automatically when logs are loaded or uploaded.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="rules-list"></div>
+                    </section>
+                </div>
+
+            </div><!-- end content-body -->
+        </main>
+    </div>
+
+    <!-- ── Threat Details Modal ───────────────────────────────────────────── -->
+    <div class="modal-overlay" id="threat-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Threat Details</h3>
+                <button class="modal-close-btn" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer">
+                <button class="action-btn-sm" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Chart.js CDN ──────────────────────────────────────────────────── -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+    <!-- ── Interactive Client Script ─────────────────────────────────────── -->
+    <script>
+    /* ════════════════════════════════════════════════════════════════════════
+       LogGuard SOC Dashboard – Functional Frontend Engine
+       ════════════════════════════════════════════════════════════════════════ */
+
+    // ── Detection Configuration (mirrors app.py) ────────────────────────────
+    const CONFIG = {
+        FAILED_1SEC_THRESHOLD: 3,
+        FAILED_1MIN_THRESHOLD: 5,
+        REPEATED_FAIL_THRESHOLD: 5,
+        SUSPICIOUS_KEYWORDS: ["UNAUTHORIZED", "ACCESS_DENIED", "MALICIOUS", "ATTACK"],
+    };
+
+    // ── State ───────────────────────────────────────────────────────────────
+    let parsedLogs = [];
+    let detectedThreats = [];
+    let currentPage = "dashboard";
+    let chartInstances = {};
+
+    // ── Log Parsing ─────────────────────────────────────────────────────────
+    function parseLogs(text) {
+        const lines = text.trim().split("\n");
+        const rows = [];
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            const parts = trimmed.split(",", 4);
+            if (parts.length !== 4) continue;
+            const dateStr = parts[0].trim().replace(" ", "T");
+            const ts = new Date(dateStr);
+            if (isNaN(ts.getTime())) continue;
+            rows.push({
+                timestamp: ts,
+                ip: parts[1].trim(),
+                username: parts[2].trim(),
+                event: parts[3].trim(),
+            });
+        }
+        rows.sort((a, b) => a.timestamp - b.timestamp);
+        return rows;
+    }
+
+    // ── Classification ──────────────────────────────────────────────────────
+    function classifyEvent(event) {
+        const upper = event.toUpperCase();
+        if (upper.includes("FAILED")) return "Failed";
+        if (CONFIG.SUSPICIOUS_KEYWORDS.some(kw => upper.includes(kw))) return "Suspicious";
+        if (upper.includes("SUCCESS")) return "Success";
+        return "Other";
+    }
+
+    function getStatusEmoji(cls) {
+        return { "Success": "✅", "Failed": "❌", "Suspicious": "⚠️", "Other": "ℹ️" }[cls] || "ℹ️";
+    }
+
+    // ── Threat Detection Engine ─────────────────────────────────────────────
+    function detectThreats(logs) {
+        const threats = [];
+        if (!logs.length) return threats;
+
+        const failedLogs = logs.filter(l => l.event.toUpperCase().includes("FAILED"));
+        const ipGroups = {};
+        failedLogs.forEach(l => {
+            if (!ipGroups[l.ip]) ipGroups[l.ip] = [];
+            ipGroups[l.ip].push(l);
+        });
+
+        for (const [ip, group] of Object.entries(ipGroups)) {
+            const times = group.map(g => g.timestamp.getTime()).sort((a, b) => a - b);
+
+            // Rule 1 — Brute Force (1-second window)
+            let bruteFound = false;
+            for (let i = 0; i < times.length; i++) {
+                const windowEnd = times[i] + 1000;
+                const windowCount = times.filter(t => t >= times[i] && t <= windowEnd).length;
+                if (windowCount >= CONFIG.FAILED_1SEC_THRESHOLD) {
+                    threats.push({
+                        time: new Date(times[i]),
+                        ip: ip,
+                        threat: "Brute Force Attack",
+                        attempts: windowCount,
+                        window: "1 sec",
+                        severity: "HIGH",
+                        description: `${windowCount} failed logins within 1 second`,
+                    });
+                    bruteFound = true;
+                    break;
+                }
+            }
+
+            // Rule 2 — Suspicious Login Activity (1-minute window)
+            let burstFound = false;
+            for (let i = 0; i < times.length; i++) {
+                const windowEnd = times[i] + 60000;
+                const windowCount = times.filter(t => t >= times[i] && t <= windowEnd).length;
+                if (windowCount >= CONFIG.FAILED_1MIN_THRESHOLD) {
+                    threats.push({
+                        time: new Date(times[i]),
+                        ip: ip,
+                        threat: "Suspicious Login Activity",
+                        attempts: windowCount,
+                        window: "1 min",
+                        severity: "MEDIUM",
+                        description: `${windowCount} failed logins within 1 minute`,
+                    });
+                    burstFound = true;
+                    break;
+                }
+            }
+
+            // Rule 3 — Repeated Failed Login (total count)
+            if (group.length >= CONFIG.REPEATED_FAIL_THRESHOLD && !bruteFound && !burstFound) {
+                threats.push({
+                    time: group[0].timestamp,
+                    ip: ip,
+                    threat: "Repeated Failed Login",
+                    attempts: group.length,
+                    window: "total",
+                    severity: "MEDIUM",
+                    description: `${group.length} total failed login attempts`,
+                });
+            }
+        }
+
+        // Rule 4 — Suspicious Events (keyword matching)
+        for (const kw of CONFIG.SUSPICIOUS_KEYWORDS) {
+            const matches = logs.filter(l => l.event.toUpperCase().includes(kw));
+            matches.forEach(m => {
+                threats.push({
+                    time: m.timestamp,
+                    ip: m.ip,
+                    threat: "Suspicious Event",
+                    attempts: 1,
+                    window: "–",
+                    severity: "HIGH",
+                    description: `Event: ${m.event}`,
+                });
+            });
+        }
+
+        return threats;
+    }
+
+    // ── Metrics Calculation ──────────────────────────────────────────────────
+    function calculateMetrics(logs, threats) {
+        const total = logs.length;
+        const failed = logs.filter(l => l.event.toUpperCase().includes("FAILED")).length;
+        const suspiciousIPs = [...new Set(threats.map(t => t.ip))].length;
+        const clean = logs.filter(l => {
+            const cls = classifyEvent(l.event);
+            return cls !== "Failed" && cls !== "Suspicious";
+        }).length;
+        return { total, failed, suspiciousIPs, clean };
+    }
+
+    // ── Navigation ──────────────────────────────────────────────────────────
+    function navigate(page) {
+        currentPage = page;
+        document.querySelectorAll(".page-section").forEach(s => s.classList.remove("active-page"));
+        document.querySelectorAll(".nav-link[data-nav]").forEach(l => l.classList.remove("active"));
+
+        const target = document.getElementById(`page-${page}`);
+        const link = document.querySelector(`.nav-link[data-nav="${page}"]`);
+        if (target) target.classList.add("active-page");
+        if (link) link.classList.add("active");
+
+        const titles = {
+            dashboard: ["Security Dashboard", "Analyze, correlate, and protect against active threats"],
+            analytics: ["Visual Analytics", "Charts, trends, and data visualization"],
+            threats: ["Threat Alerts", "Detected security threats and incidents"],
+            logs: ["Log Stream", "Searchable raw log records"],
+            rules: ["Detection Rules", "Active heuristic rules and thresholds"],
+        };
+        const [t, s] = titles[page] || ["LogGuard", ""];
+        document.getElementById("page-title").textContent = t;
+        document.getElementById("page-subtitle").textContent = s;
+
+        if (page === "analytics") renderCharts();
+    }
+
+    // ── Update All Views ────────────────────────────────────────────────────
+    function updateAllViews() {
+        const metrics = calculateMetrics(parsedLogs, detectedThreats);
+
+        // KPI Cards
+        document.getElementById("val-total-logs").textContent = metrics.total;
+        document.getElementById("val-failed-logins").textContent = metrics.failed;
+        document.getElementById("val-suspicious-ips").textContent = metrics.suspiciousIPs;
+        document.getElementById("val-clean-entries").textContent = metrics.clean;
+
+        // Sidebar badges
+        document.getElementById("sidebar-threat-count").textContent = detectedThreats.length;
+        document.getElementById("sidebar-log-count").textContent = parsedLogs.length;
+
+        // Banner badge
+        document.getElementById("banner-badge").textContent =
+            parsedLogs.length > 0 ? `Dataset Loaded • ${parsedLogs.length} Events` : "No Data Loaded";
+
+        // Dashboard recent threats
+        renderDashboardThreats();
+        // Threat Alerts page
+        renderThreats();
+        // Log Stream page
+        renderLogStream();
+        // Detection Rules page
+        renderRules();
+        // Charts if on that page
+        if (currentPage === "analytics") renderCharts();
+    }
+
+    // ── Dashboard: Recent Threats ───────────────────────────────────────────
+    function renderDashboardThreats() {
+        const section = document.getElementById("dashboard-threats-section");
+        const list = document.getElementById("dashboard-threats-list");
+        const badge = document.getElementById("dashboard-threat-count");
+
+        if (detectedThreats.length === 0) {
+            section.style.display = "none";
+            return;
+        }
+        section.style.display = "block";
+        badge.textContent = `${detectedThreats.length} threats`;
+
+        list.innerHTML = detectedThreats.slice(0, 5).map(t => {
+            const cls = t.severity === "HIGH" ? "threat-high" : (t.severity === "MEDIUM" ? "threat-medium" : "threat-low");
+            const sevBadge = `<span class="threat-badge ${t.severity === 'HIGH' ? 'badge-high' : 'badge-medium'}">${t.severity}</span>`;
+            return `<div class="rule-card ${cls} fade-in" style="cursor:pointer;" onclick="openThreatDetail(${detectedThreats.indexOf(t)})">
+                <strong>${t.threat}</strong> ${sevBadge} — IP: <code class="ip-tag">${t.ip}</code>
+                | Attempts: ${t.attempts} | Window: ${t.window}<br>
+                <span style="font-size:0.82rem;color:var(--text-muted);">📝 ${t.description}</span>
+            </div>`;
+        }).join("");
+    }
+
+    // ── Threat Alerts Page ──────────────────────────────────────────────────
+    function renderThreats() {
+        const filter = document.getElementById("threat-severity-filter").value;
+        const filtered = filter === "all" ? detectedThreats : detectedThreats.filter(t => t.severity === filter);
+
+        document.getElementById("threats-total-badge").textContent = `${detectedThreats.length} detected`;
+
+        const list = document.getElementById("threats-list");
+        if (filtered.length === 0) {
+            list.innerHTML = '<div class="info-banner"><div class="info-banner-left"><div class="info-banner-icon">✅</div><div><div class="info-banner-title">No Threats Found</div><div class="info-banner-desc">No threats match the selected filter.</div></div></div></div>';
+            document.getElementById("threats-tbody").innerHTML = "";
+            return;
+        }
+
+        list.innerHTML = filtered.map((t, i) => {
+            const cls = t.severity === "HIGH" ? "threat-high" : (t.severity === "MEDIUM" ? "threat-medium" : "threat-low");
+            const sevBadge = `<span class="threat-badge ${t.severity === 'HIGH' ? 'badge-high' : (t.severity === 'MEDIUM' ? 'badge-medium' : 'badge-low')}">${t.severity}</span>`;
+            const ts = formatTimestamp(t.time);
+            return `<div class="rule-card ${cls} fade-in">
+                <strong>${t.threat}</strong> ${sevBadge}<br>
+                🕐 <code>${ts}</code> &nbsp;|&nbsp; 🌐 IP: <code class="ip-tag">${t.ip}</code> &nbsp;|&nbsp;
+                ⚡ Attempts: ${t.attempts} &nbsp;|&nbsp; ⏱ Window: ${t.window}<br>
+                📝 ${t.description}
+            </div>`;
+        }).join("");
+
+        const tbody = document.getElementById("threats-tbody");
+        tbody.innerHTML = filtered.map(t => {
+            const sevClass = t.severity === "HIGH" ? "badge-high" : (t.severity === "MEDIUM" ? "badge-medium" : "badge-low");
+            return `<tr>
+                <td><span class="time-stamp">${formatTimestamp(t.time)}</span></td>
+                <td><span class="threat-badge ${sevClass}">${t.severity}</span></td>
+                <td><span class="ip-tag">${t.ip}</span></td>
+                <td><strong>${t.threat}</strong></td>
+                <td>${t.attempts}</td>
+                <td>${t.window}</td>
+                <td>${t.description}</td>
+            </tr>`;
+        }).join("");
+    }
+
+    // ── Log Stream Page ─────────────────────────────────────────────────────
+    function renderLogStream() {
+        const ipFilter = document.getElementById("filter-ip").value.toLowerCase();
+        const userFilter = document.getElementById("filter-username").value.toLowerCase();
+        const statusFilter = document.getElementById("filter-status").value;
+        const searchFilter = document.getElementById("filter-search").value.toLowerCase();
+        const globalSearch = document.getElementById("global-search").value.toLowerCase();
+        const activeSearch = (currentPage === "logs" && searchFilter) ? searchFilter : globalSearch;
+
+        const threatIPs = new Set(detectedThreats.map(t => t.ip));
+
+        let filtered = parsedLogs.filter(log => {
+            const cls = classifyEvent(log.event).toLowerCase();
+            if (ipFilter && !log.ip.toLowerCase().includes(ipFilter)) return false;
+            if (userFilter && !log.username.toLowerCase().includes(userFilter)) return false;
+            if (statusFilter !== "all" && cls !== statusFilter) return false;
+            if (activeSearch) {
+                const haystack = `${log.timestamp.toISOString()} ${log.ip} ${log.username} ${log.event}`.toLowerCase();
+                if (!haystack.includes(activeSearch)) return false;
+            }
+            return true;
+        });
+
+        document.getElementById("log-stream-count").textContent = `${filtered.length} of ${parsedLogs.length} records`;
+
+        const tbody = document.getElementById("log-tbody");
+        // Limit to 200 rows for performance
+        const display = filtered.slice(0, 200);
+        tbody.innerHTML = display.map(log => {
+            const cls = classifyEvent(log.event);
+            const emoji = getStatusEmoji(cls);
+            const threatClass = threatIPs.has(log.ip) ? "🔴 Threat IP" :
+                                (cls === "Failed" ? "⚠️ Failed" : "✅ Clean");
+            const statusTag = cls === "Failed" ? "status-flagged" :
+                              (cls === "Suspicious" ? "status-blocked" : "status-clean");
+            return `<tr>
+                <td><span class="time-stamp">${formatTimestamp(log.timestamp)}</span></td>
+                <td><span class="ip-tag">${log.ip}</span></td>
+                <td><span class="user-tag">${log.username}</span></td>
+                <td>${log.event}</td>
+                <td><span class="status-tag ${statusTag}">${emoji} ${cls}</span></td>
+                <td>${threatClass}</td>
+            </tr>`;
+        }).join("");
+
+        if (display.length < filtered.length) {
+            tbody.innerHTML += `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:12px;">
+                Showing first 200 of ${filtered.length} matching records.
+            </td></tr>`;
+        }
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:30px;">
+                No log records match the selected filters.
+            </td></tr>`;
+        }
+    }
+
+    // ── Detection Rules Page ────────────────────────────────────────────────
+    function renderRules() {
+        const rules = [
+            { num: "1", title: "Brute Force Detection", condition: `${CONFIG.FAILED_1SEC_THRESHOLD}+ failed logins from the same IP within 1 second`, severity: "HIGH", desc: "Detects rapid-fire login attempts that indicate an automated brute-force attack tool." },
+            { num: "2", title: "Suspicious Login Activity", condition: `${CONFIG.FAILED_1MIN_THRESHOLD}+ failed logins from the same IP within 1 minute`, severity: "MEDIUM", desc: "Identifies an IP that is persistently trying to log in within a short time window." },
+            { num: "3", title: "Repeated Failed Login", condition: `${CONFIG.REPEATED_FAIL_THRESHOLD}+ total failed login attempts from one IP`, severity: "MEDIUM", desc: "Flags any IP with a high total count of failed logins across the entire log." },
+            { num: "4", title: "Suspicious Event Detection", condition: `Event contains keywords: ${CONFIG.SUSPICIOUS_KEYWORDS.join(", ")}`, severity: "HIGH", desc: "Catches log entries with explicitly suspicious or malicious event types." },
+        ];
+        document.getElementById("rules-list").innerHTML = rules.map(r => {
+            const sevBadge = `<span class="threat-badge ${r.severity === 'HIGH' ? 'badge-high' : 'badge-medium'}">${r.severity}</span>`;
+            return `<div class="rule-card fade-in">
+                <span class="rule-number">${r.num}</span>
+                <strong>${r.title}</strong><br>
+                <em>${r.condition}</em><br>
+                Severity: ${sevBadge}<br>
+                <span style="color:var(--text-muted);font-size:0.82rem;">${r.desc}</span>
+            </div>`;
+        }).join("");
+    }
+
+    // ── Charts (Visual Analytics) ───────────────────────────────────────────
+    function renderCharts() {
+        if (!parsedLogs.length) return;
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        const gridColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+        const textColor = isDark ? "#cbd5e1" : "#475569";
+
+        // Destroy existing charts
+        Object.values(chartInstances).forEach(c => c.destroy());
+        chartInstances = {};
+
+        // Helper: Create canvas
+        function makeCanvas(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+            const canvas = document.createElement("canvas");
+            canvas.style.maxHeight = "300px";
+            container.appendChild(canvas);
+            return canvas.getContext("2d");
+        }
+
+        const baseOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: textColor } } },
+            scales: {
+                x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                y: { ticks: { color: textColor }, grid: { color: gridColor } },
+            },
+        };
+
+        // Chart 1: Timeline (events per minute)
+        const minuteBuckets = {};
+        parsedLogs.forEach(l => {
+            const key = l.timestamp.toISOString().substring(0, 16); // YYYY-MM-DDTHH:MM
+            minuteBuckets[key] = (minuteBuckets[key] || 0) + 1;
+        });
+        const timeLabels = Object.keys(minuteBuckets).sort();
+        const timeData = timeLabels.map(k => minuteBuckets[k]);
+        chartInstances.timeline = new Chart(makeCanvas("chart-timeline"), {
+            type: "line",
+            data: {
+                labels: timeLabels.map(t => t.replace("T", " ")),
+                datasets: [{
+                    label: "Events / Minute",
+                    data: timeData,
+                    borderColor: "#58a6ff",
+                    backgroundColor: "rgba(88,166,255,0.15)",
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4,
+                }],
+            },
+            options: { ...baseOptions, plugins: { ...baseOptions.plugins, title: { display: true, text: "Log Events Timeline", color: textColor, font: { size: 14, weight: 700 } } } },
+        });
+
+        // Chart 2: Login Status Distribution (pie)
+        const statusCounts = { Success: 0, Failed: 0, Suspicious: 0, Other: 0 };
+        parsedLogs.forEach(l => { statusCounts[classifyEvent(l.event)]++; });
+        chartInstances.loginStatus = new Chart(makeCanvas("chart-login-status"), {
+            type: "doughnut",
+            data: {
+                labels: Object.keys(statusCounts),
+                datasets: [{
+                    data: Object.values(statusCounts),
+                    backgroundColor: ["#3fb950", "#f85149", "#d29922", "#58a6ff"],
+                }],
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor } }, title: { display: true, text: "Login Status Distribution", color: textColor, font: { size: 14, weight: 700 } } } },
+        });
+
+        // Chart 3: Threat Severity Distribution (bar)
+        const sevCounts = { HIGH: 0, MEDIUM: 0, LOW: 0 };
+        detectedThreats.forEach(t => { sevCounts[t.severity] = (sevCounts[t.severity] || 0) + 1; });
+        chartInstances.threatSev = new Chart(makeCanvas("chart-threat-severity"), {
+            type: "bar",
+            data: {
+                labels: Object.keys(sevCounts),
+                datasets: [{
+                    label: "Count",
+                    data: Object.values(sevCounts),
+                    backgroundColor: ["#f85149", "#d29922", "#3fb950"],
+                    borderRadius: 6,
+                }],
+            },
+            options: { ...baseOptions, plugins: { ...baseOptions.plugins, title: { display: true, text: "Threat Severity Distribution", color: textColor, font: { size: 14, weight: 700 } } } },
+        });
+
+        // Chart 4: Top IPs (bar)
+        const ipCounts = {};
+        parsedLogs.forEach(l => { ipCounts[l.ip] = (ipCounts[l.ip] || 0) + 1; });
+        const topIPs = Object.entries(ipCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        chartInstances.topIPs = new Chart(makeCanvas("chart-top-ips"), {
+            type: "bar",
+            data: {
+                labels: topIPs.map(e => e[0]),
+                datasets: [{
+                    label: "Events",
+                    data: topIPs.map(e => e[1]),
+                    backgroundColor: "#58a6ff",
+                    borderRadius: 6,
+                }],
+            },
+            options: { ...baseOptions, plugins: { ...baseOptions.plugins, title: { display: true, text: "Top IP Addresses by Activity", color: textColor, font: { size: 14, weight: 700 } } } },
+        });
+
+        // Chart 5: Failed Logins by IP (bar)
+        const failedIPs = {};
+        parsedLogs.filter(l => l.event.toUpperCase().includes("FAILED")).forEach(l => {
+            failedIPs[l.ip] = (failedIPs[l.ip] || 0) + 1;
+        });
+        const topFailedIPs = Object.entries(failedIPs).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        chartInstances.failedIPs = new Chart(makeCanvas("chart-failed-ips"), {
+            type: "bar",
+            data: {
+                labels: topFailedIPs.map(e => e[0]),
+                datasets: [{
+                    label: "Failed Logins",
+                    data: topFailedIPs.map(e => e[1]),
+                    backgroundColor: "#f85149",
+                    borderRadius: 6,
+                }],
+            },
+            options: { ...baseOptions, plugins: { ...baseOptions.plugins, title: { display: true, text: "Failed Logins by IP", color: textColor, font: { size: 14, weight: 700 } } } },
+        });
+    }
+
+    // ── Modal ───────────────────────────────────────────────────────────────
+    function openThreatDetail(index) {
+        const t = detectedThreats[index];
+        if (!t) return;
+        document.getElementById("modal-title").textContent = `Threat: ${t.threat}`;
+        document.getElementById("modal-body").innerHTML = `
+            <div class="modal-row"><span class="modal-label">Source IP:</span><span class="modal-value ip-tag">${t.ip}</span></div>
+            <div class="modal-row"><span class="modal-label">Severity:</span><span class="modal-value"><span class="threat-badge ${t.severity === 'HIGH' ? 'badge-high' : 'badge-medium'}">${t.severity}</span></span></div>
+            <div class="modal-row"><span class="modal-label">Timestamp:</span><span class="modal-value">${formatTimestamp(t.time)}</span></div>
+            <div class="modal-row"><span class="modal-label">Window:</span><span class="modal-value">${t.window} (${t.attempts} events)</span></div>
+            <div class="modal-row"><span class="modal-label">Description:</span><span class="modal-value">${t.description}</span></div>
+        `;
+        document.getElementById("threat-modal").classList.add("open");
+    }
+
+    function closeModal() {
+        document.getElementById("threat-modal").classList.remove("open");
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function formatTimestamp(d) {
+        if (!(d instanceof Date)) d = new Date(d);
+        const Y = d.getFullYear();
+        const M = String(d.getMonth() + 1).padStart(2, "0");
+        const D = String(d.getDate()).padStart(2, "0");
+        const h = String(d.getHours()).padStart(2, "0");
+        const m = String(d.getMinutes()).padStart(2, "0");
+        const s = String(d.getSeconds()).padStart(2, "0");
+        return `${Y}-${M}-${D} ${h}:${m}:${s}`;
+    }
+
+    // ── Load & Process ──────────────────────────────────────────────────────
+    function processLogText(text) {
+        parsedLogs = parseLogs(text);
+        detectedThreats = detectThreats(parsedLogs);
+        updateAllViews();
+    }
+
+    const DEFAULT_SAMPLE_LOGS = `2026-10-08 10:00:01,192.168.1.10,admin,LOGIN_SUCCESS
+2026-10-08 10:00:05,192.168.1.11,jdoe,LOGIN_SUCCESS
+2026-10-08 10:00:10,192.168.1.12,analyst,LOGIN_SUCCESS
+2026-10-08 10:00:15,10.0.0.5,root,LOGIN_FAILED
+2026-10-08 10:00:20,192.168.1.10,admin,LOGOUT
+2026-10-08 10:00:25,192.168.1.13,guest,LOGIN_FAILED
+2026-10-08 10:00:30,10.0.0.5,root,LOGIN_FAILED
+2026-10-08 10:00:45,10.0.0.5,root,LOGIN_FAILED
+2026-10-08 10:00:50,10.0.0.5,root,LOGIN_FAILED
+2026-10-08 10:00:55,10.0.0.5,root,LOGIN_FAILED
+2026-10-08 10:01:00,192.168.1.14,sysadmin,LOGIN_SUCCESS
+2026-10-08 10:01:05,192.168.1.11,jdoe,FILE_ACCESS
+2026-10-08 10:01:10,192.168.1.15,unknown,UNAUTHORIZED_ACCESS
+2026-10-08 10:01:15,192.168.1.16,scanner,PORT_SCAN
+2026-10-08 10:01:20,192.168.1.10,admin,LOGIN_SUCCESS
+2026-10-08 10:01:25,10.0.0.25,attacker,LOGIN_FAILED
+2026-10-08 10:01:25,10.0.0.25,attacker,LOGIN_FAILED
+2026-10-08 10:01:25,10.0.0.25,attacker,LOGIN_FAILED
+2026-10-08 10:01:30,192.168.1.17,dev,LOGIN_SUCCESS
+2026-10-08 10:01:35,192.168.1.12,analyst,FILE_ACCESS
+2026-10-08 10:01:40,10.0.0.25,attacker,LOGIN_FAILED
+2026-10-08 10:01:45,10.0.0.25,attacker,LOGIN_FAILED
+2026-10-08 10:01:50,192.168.1.18,operator,LOGIN_SUCCESS
+2026-10-08 10:02:00,192.168.1.19,hacker,MALICIOUS_UPLOAD
+2026-10-08 10:02:05,192.168.1.20,admin,LOGIN_FAILED
+2026-10-08 10:02:10,192.168.1.20,admin,LOGIN_FAILED
+2026-10-08 10:02:15,192.168.1.11,jdoe,LOGOUT
+2026-10-08 10:02:20,192.168.1.21,intruder,ACCESS_DENIED
+2026-10-08 10:02:25,192.168.1.14,sysadmin,CONFIG_CHANGE
+2026-10-08 10:02:30,192.168.1.22,monitor,LOGIN_SUCCESS
+2026-10-08 10:02:35,192.168.1.13,guest,LOGIN_FAILED
+2026-10-08 10:02:40,192.168.1.13,guest,LOGIN_FAILED
+2026-10-08 10:02:45,192.168.1.10,admin,FILE_ACCESS
+2026-10-08 10:02:50,192.168.1.23,backup,LOGIN_SUCCESS
+2026-10-08 10:02:55,192.168.1.24,test,LOGIN_FAILED
+2026-10-08 10:03:00,192.168.1.12,analyst,LOGOUT
+2026-10-08 10:03:05,10.0.0.50,bot,LOGIN_FAILED
+2026-10-08 10:03:05,10.0.0.50,bot,LOGIN_FAILED
+2026-10-08 10:03:05,10.0.0.50,bot,LOGIN_FAILED
+2026-10-08 10:03:05,10.0.0.50,bot,LOGIN_FAILED
+2026-10-08 10:03:10,192.168.1.14,sysadmin,LOGIN_SUCCESS
+2026-10-08 10:03:15,192.168.1.25,auditor,LOGIN_SUCCESS
+2026-10-08 10:03:20,10.0.0.50,bot,LOGIN_FAILED
+2026-10-08 10:03:25,10.0.0.50,bot,LOGIN_FAILED
+2026-10-08 10:03:30,192.168.1.17,dev,FILE_ACCESS
+2026-10-08 10:03:35,192.168.1.26,visitor,LOGIN_FAILED
+2026-10-08 10:03:40,192.168.1.22,monitor,LOGOUT
+2026-10-08 10:03:45,192.168.1.27,service,LOGIN_SUCCESS
+2026-10-08 10:03:50,192.168.1.28,intern,LOGIN_FAILED
+2026-10-08 10:03:55,192.168.1.10,admin,CONFIG_CHANGE
+2026-10-08 10:04:00,192.168.1.29,manager,LOGIN_SUCCESS
+2026-10-08 10:04:05,192.168.1.30,attacker2,ATTACK_DETECTED`;
+
+    // ── Load Sample Log ─────────────────────────────────────────────────────
+    async function loadSampleLog() {
+        try {
+            const response = await fetch("sample_logs.log");
+            if (!response.ok) throw new Error("Could not load sample_logs.log via network fetch");
+            const text = await response.text();
+            processLogText(text);
+        } catch (err) {
+            console.info("Using embedded sample log data fallback (fetch unavailable or file:// protocol):", err);
+            processLogText(DEFAULT_SAMPLE_LOGS);
+        }
+    }
+
+    // ── Event Bindings ──────────────────────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", () => {
+        // Navigation
+        document.querySelectorAll(".nav-link[data-nav]").forEach(link => {
+            link.addEventListener("click", () => navigate(link.dataset.nav));
+        });
+
+        // Load sample log button
+        document.getElementById("btn-load-sample").addEventListener("click", loadSampleLog);
+
+        // Upload trigger
+        document.getElementById("btn-upload-trigger").addEventListener("click", () => {
+            document.getElementById("file-upload").click();
+        });
+
+        // File upload
+        document.getElementById("file-upload").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => processLogText(ev.target.result);
+            reader.readAsText(file);
+            e.target.value = ""; // Reset so same file can be re-uploaded
+        });
+
+        // Theme toggle
+        document.getElementById("theme-toggle").addEventListener("click", () => {
+            const html = document.documentElement;
+            const current = html.getAttribute("data-theme") || "dark";
+            const next = current === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", next);
+            if (currentPage === "analytics") renderCharts();
+        });
+
+        // Global search — filter log stream
+        document.getElementById("global-search").addEventListener("input", () => {
+            if (currentPage === "logs") renderLogStream();
+        });
+
+        // Threat severity filter
+        document.getElementById("threat-severity-filter").addEventListener("change", renderThreats);
+
+        // Log stream filters
+        ["filter-ip", "filter-username", "filter-status", "filter-search"].forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener(el.tagName === "SELECT" ? "change" : "input", renderLogStream);
+        });
+
+        // Auto-load sample log on page load
+        loadSampleLog();
+    });
+    </script>
+
+    <!-- ── Page section visibility CSS ───────────────────────────────────── -->
+    <style>
+        .page-section { display: none; }
+        .page-section.active-page { display: block; }
+        .chart-container { min-height: 300px; position: relative; }
+    </style>
+</body>
+</html>
