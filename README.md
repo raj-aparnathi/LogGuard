@@ -21,10 +21,12 @@ A Python-based cybersecurity log analysis dashboard that detects suspicious acti
 
 | Technology | Purpose |
 |------------|---------|
-| Python | Core language |
-| Streamlit | Web dashboard framework |
-| Pandas | Data processing & analysis |
-| Plotly | Interactive charts |
+| Python 3.x | Core backend language |
+| Flask | WSGI Web framework & REST API |
+| Pandas | Log data parsing, windowing & aggregation |
+| HTML5 / CSS3 / Vanilla JS | Frontend SOC Dashboard UI |
+| Chart.js | Visual analytics & trends |
+| Vercel | Serverless deployment platform |
 
 ---
 
@@ -32,11 +34,14 @@ A Python-based cybersecurity log analysis dashboard that detects suspicious acti
 
 ```
 LogGuard/
-├── app.py              # Main application (all Python logic & Streamlit UI)
-├── index.html          # Standalone frontend SOC dashboard (HTML presentation)
-├── style.css           # External stylesheet for both index.html & Streamlit
-├── sample_logs.log     # Sample log file with test data
-├── requirements.txt    # Python dependencies
+├── app.py              # Main Flask WSGI backend & threat detection engine
+├── api/
+│   └── index.py        # Vercel Serverless Function entrypoint
+├── index.html          # Frontend SOC Dashboard UI
+├── style.css           # Modern SOC dark/light theme stylesheet
+├── sample_logs.log     # Sample authentication and audit logs
+├── vercel.json         # Vercel routing & rewrites configuration
+├── requirements.txt    # Production dependencies for Vercel
 ├── README.md           # Project documentation
 └── design.md           # Architecture & design documentation
 ```
@@ -57,11 +62,15 @@ pip install -r requirements.txt
 
 ## 🚀 Running the Application
 
+### Local Development
 ```bash
-streamlit run app.py
+python app.py
 ```
 
-The dashboard will open in your browser at `http://localhost:8501`.
+The dashboard will open in your browser at `http://127.0.0.1:5000`.
+
+### Deploying to Vercel
+Push your repository to GitHub, GitLab, or Bitbucket and import the project into Vercel. Vercel automatically detects the Flask WSGI application using `vercel.json` and `requirements.txt`.
 
 ---
 
@@ -118,7 +127,7 @@ Severity: HIGH
 ## 📺 Screens / Pages
 
 1. **Dashboard** — Metric cards + summary info + recent threats
-2. **Visual Analytics** — 5 interactive Plotly charts
+2. **Visual Analytics** — 5 interactive Chart.js charts
 3. **Threat Alerts** — Filterable threat table
 4. **Log Stream** — Filterable log record viewer
 5. **Detection Rules** — Rule documentation

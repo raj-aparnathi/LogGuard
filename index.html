@@ -842,7 +842,48 @@
     }
 
     // ── Load & Process ──────────────────────────────────────────────────────
-    function processLogText(text) {
+    function applyServerAnalysis(data) {
+        if (!data || !data.logs) return;
+        parsedLogs = data.logs.map(l => ({
+            ...l,
+            timestamp: new Date(l.iso || l.timestamp)
+        }));
+        detectedThreats = (data.threats || []).map(t => ({
+            ...t,
+            time: new Date(t.time)
+        }));
+        updateAllViews();
+
+        if (data.metrics) {
+            document.getElementById("val-total-logs").textContent = data.metrics.total_logs;
+            document.getElementById("val-failed-logins").textContent = data.metrics.failed_logins;
+            document.getElementById("val-suspicious-ips").textContent = data.metrics.suspicious_ips;
+            document.getElementById("val-clean-entries").textContent = data.metrics.clean_entries;
+            document.getElementById("sidebar-threat-count").textContent = detectedThreats.length;
+            document.getElementById("sidebar-log-count").textContent = parsedLogs.length;
+            document.getElementById("banner-badge").textContent =
+                parsedLogs.length > 0 ? `Dataset Loaded • ${parsedLogs.length} Events` : "No Data Loaded";
+        }
+    }
+
+    async function processLogText(text) {
+        try {
+            const res = await fetch("/api/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ log_text: text })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.status === "success") {
+                    applyServerAnalysis(data);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.info("Python backend /api/analyze unavailable, using client-side engine:", e);
+        }
+
         parsedLogs = parseLogs(text);
         detectedThreats = detectThreats(parsedLogs);
         updateAllViews();
@@ -904,12 +945,25 @@
     // ── Load Sample Log ─────────────────────────────────────────────────────
     async function loadSampleLog() {
         try {
+            const res = await fetch("/api/sample-logs");
+            if (res.ok) {
+                const data = await res.json();
+                if (data.status === "success") {
+                    applyServerAnalysis(data);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.info("Backend /api/sample-logs fetch skipped, checking static file:", err);
+        }
+
+        try {
             const response = await fetch("sample_logs.log");
             if (!response.ok) throw new Error("Could not load sample_logs.log via network fetch");
             const text = await response.text();
             processLogText(text);
         } catch (err) {
-            console.info("Using embedded sample log data fallback (fetch unavailable or file:// protocol):", err);
+            console.info("Using embedded sample log data fallback:", err);
             processLogText(DEFAULT_SAMPLE_LOGS);
         }
     }
@@ -930,9 +984,29 @@
         });
 
         // File upload
-        document.getElementById("file-upload").addEventListener("change", (e) => {
+        document.getElementById("file-upload").addEventListener("change", async (e) => {
             const file = e.target.files[0];
             if (!file) return;
+
+            try {
+                const formData = new FormData();
+                formData.append("file", file);
+                const res = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === "success") {
+                        applyServerAnalysis(data);
+                        e.target.value = "";
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.info("Server /api/upload unavailable, falling back to local file reader:", err);
+            }
+
             const reader = new FileReader();
             reader.onload = (ev) => processLogText(ev.target.result);
             reader.readAsText(file);
